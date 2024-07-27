@@ -8,15 +8,18 @@ app.use(express.json());
 
 // routes
 app.get("/books", async (req, res) => {
-  console.log("helohjh");
-  res.send({ messeage: "Hello World!" });
+  try {
+    const books=await pool.query("SELECT * FROM book1")
+    res.status(200).json({ messeage: `all data`,data:books.rows },);
+  } catch (error) {}
 });
 // get single book
 app.get("/books/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    const book=await pool.query("SELECT * FROM book1 WHERE id=$1",[id])
     console.log(id);
-    res.status(200).json({ messeage: `i have a single product ${id}` });
+    res.status(200).json({ messeage: `single product`,data:book.rows });
   } catch (error) {
     res.json({ messeage: "invalid data" });
   }
@@ -26,7 +29,7 @@ app.post("/book", async (req, res) => {
   try {
     const { name, description } = req.body;
     const id = uuidv4();
-    console.log(id)
+    console.log(id);
     // inser a book postgresSQL
     const newBook = await pool.query(
       "INSERT INTO book1(id,name,description) VALUES($1,$2,$3) RETURNING*",
@@ -41,8 +44,9 @@ app.post("/book", async (req, res) => {
 app.delete("/book/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id);
-    res.status(200).json({ messeage: `delete single product ${id}` });
+    await pool.query("DELETE FROM book1 WHERE id=$1",[id])
+  
+    res.status(200).json({ messeage: `delete success`});
   } catch (error) {
     res.json({ messeage: `${error}` });
   }
@@ -50,11 +54,12 @@ app.delete("/book/:id", async (req, res) => {
 // update single book
 app.put("/book/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-
-    res.status(200).json({ messeage: `update single product ${id}` });
+    const { id} = req.params;
+    const { name,description} = req.body;
+    const updateBook=await pool.query("UPDATE book1 SET name=$1,description=$2 WHERE id=$3 RETURNING*",[name,description,id])
+    res.status(200).json({ messeage: `update success`,data:updateBook.rows });
   } catch (error) {
-    res.json({ messeage: "invalid data" });
+    res.json({ messeage: `${error}` });
   }
 });
 
